@@ -43,6 +43,20 @@ body {
 }
 .nav-link:active { background: #EEF2FF; border-color: var(--primary); }
 
+.group-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.group-card {
+  aspect-ratio: 1; border-radius: var(--radius-lg); padding: 24px 16px;
+  box-shadow: var(--shadow-lg); cursor: pointer; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; color: #fff;
+}
+.group-card:active { transform: scale(0.97); }
+.group-card.open { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #A855F7 100%); }
+.group-card.senior { background: linear-gradient(135deg, #F97316 0%, #F59E0B 60%, #EF4444 100%); }
+.group-card .gc-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.group-card .gc-name { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.04em; }
+.group-card .gc-desc { font-size: 0.8rem; opacity: 0.85; margin-top: 8px; line-height: 1.5; }
+
 .event-cards { display: grid; gap: 10px; margin-bottom: 20px; }
 .event-card {
   background: var(--surface); border-radius: var(--radius); padding: 16px;
@@ -54,6 +68,12 @@ body {
 .event-card .count { font-size: 0.85rem; color: var(--text2); font-weight: 500; }
 .event-card .count.full { color: var(--danger); }
 .event-card .count.near { color: var(--warning); }
+
+.del-btn {
+  padding: 4px 10px; font-size: 0.75rem; font-weight: 600; color: #fff;
+  background: var(--danger); border: none; border-radius: 4px; cursor: pointer;
+}
+.del-btn:active { opacity: 0.8; }
 
 .cta-btn {
   display: block; width: 100%; padding: 16px; font-size: 1.1rem; font-weight: 700;
@@ -195,7 +215,7 @@ body {
       <div class="nav-link" onclick="showPage('page-notice')">赛事通知</div>
     </div>
     <div id="db-warning" style="display:none;"></div>
-    <div class="event-cards" id="event-cards"></div>
+    <div class="group-cards" id="group-cards"></div>
     <button class="cta-btn" onclick="showPage('page-register')">立即报名</button>
     <div class="admin-foot">
       <a onclick="showPage('page-admin')">管理员入口</a>
@@ -219,6 +239,15 @@ body {
     </div>
     <div class="count-badge" id="evt-count"></div>
     <div id="evt-list"></div>
+  </section>
+
+  <!-- ===== 组别子页面 ===== -->
+  <section id="page-group" class="page">
+    <div class="page-header">
+      <button class="back-btn" onclick="showPage('page-home')">← 返回</button>
+      <h2 id="group-title"></h2>
+    </div>
+    <div class="event-cards" id="group-event-cards"></div>
   </section>
 
   <!-- ===== 赛事通知 ===== -->
@@ -396,16 +425,20 @@ async function restFetch(path, method, body, extraHeaders) {
 // ==================== 常量 ====================
 const TOURNAMENT_DATE = new Date('2026-06-26');
 const ADMIN_PASSWORD = '27885';
-const ALL_EVENTS = ['男子单打', '男子双打', '女子单打', '女子双打', '混合双打'];
+const ALL_EVENTS = ['男子单打', '男子双打', '女子单打', '女子双打', '公开组男子双打', '公开组女子双打', '常青组男子双打', '常青组女子双打', '混合双打'];
+const GROUP_EVENTS = {
+  '公开组': ['男子单打', '男子双打', '女子单打', '女子双打'],
+  '常青组': ['公开组男子双打', '公开组女子双打', '常青组男子双打', '常青组女子双打', '混合双打']
+};
 const MAX_SLOTS = 32;
 const EVENTS_CONFIG = {
   '男': {
     '公开组': { primary: ['男子单打', '男子双打'], secondary: ['男子单打', '男子双打'] },
-    '常青组': { primary: ['男子双打', '混合双打'], secondary: ['男子双打', '混合双打'] }
+    '常青组': { primary: ['公开组男子双打', '常青组男子双打', '混合双打'], secondary: ['公开组男子双打', '常青组男子双打', '混合双打'] }
   },
   '女': {
     '公开组': { primary: ['女子单打', '女子双打'], secondary: ['女子单打', '女子双打'] },
-    '常青组': { primary: ['女子双打', '混合双打'], secondary: ['女子双打', '混合双打'] }
+    '常青组': { primary: ['公开组女子双打', '常青组女子双打', '混合双打'], secondary: ['公开组女子双打', '常青组女子双打', '混合双打'] }
   }
 };
 
@@ -430,6 +463,10 @@ function showPage(pageId, data) {
   switch (pageId) {
     case 'page-home': loadHome(); break;
     case 'page-players': loadPlayerList(); break;
+    case 'page-group':
+      document.getElementById('group-title').textContent = data || '';
+      loadGroupPage(data || '');
+      break;
     case 'page-event-players':
       document.getElementById('evt-title').textContent = data || '';
       loadEventPlayers(data || '');
@@ -460,7 +497,7 @@ async function loadHome() {
       '<strong>API 诊断失败：</strong><br>' + esc(e.message || '') + '</div>';
   }
   await loadCounts();
-  renderEventCards();
+  renderGroupCards();
 }
 
 async function loadCounts() {
@@ -476,9 +513,26 @@ async function loadCounts() {
   } catch (err) { console.error('loadCounts:', err.message || err); }
 }
 
-function renderEventCards() {
-  var container = document.getElementById('event-cards');
-  container.innerHTML = ALL_EVENTS.map(function(name) {
+function renderGroupCards() {
+  var container = document.getElementById('group-cards');
+  container.innerHTML =
+    '<div class="group-card open" onclick="showPage(\'page-group\', \'公开组\')">' +
+      '<div class="gc-icon">🏸</div>' +
+      '<div class="gc-name">公开组</div>' +
+      '<div class="gc-desc">年龄 &lt; 50 岁<br>男子单打 · 男子双打<br>女子单打 · 女子双打</div>' +
+    '</div>' +
+    '<div class="group-card senior" onclick="showPage(\'page-group\', \'常青组\')">' +
+      '<div class="gc-icon">🏅</div>' +
+      '<div class="gc-name">常青组</div>' +
+      '<div class="gc-desc">年龄 ≥ 50 岁<br>男子双打 · 女子双打<br>混合双打</div>' +
+    '</div>';
+}
+
+async function loadGroupPage(groupName) {
+  var container = document.getElementById('group-event-cards');
+  await loadCounts();
+  var events = GROUP_EVENTS[groupName] || [];
+  container.innerHTML = events.map(function(name) {
     var count = STATE.eventCounts[name] || 0;
     var cls = count >= MAX_SLOTS ? 'full' : (count >= 28 ? 'near' : '');
     return '<div class="event-card" onclick="showPage(\'page-event-players\', \'' + name + '\')">' +
@@ -837,6 +891,7 @@ function renderAdmin(filter) {
     html += '<table class="data-table"><thead><tr>' +
       '<th>姓名</th><th>性别</th><th>年龄组</th><th>电话</th><th>出生日期</th>' +
       '<th>身份证号</th><th>市州</th><th>主项</th><th>兼项</th><th>住宿</th><th>付款</th><th>报名时间</th>' +
+      '<th>操作</th>' +
       '</tr></thead><tbody>';
     data.forEach(function(r) {
       html += '<tr>' +
@@ -847,6 +902,7 @@ function renderAdmin(filter) {
         '<td style="color:' + (r.payment_status === 'paid' ? 'var(--success)' : 'var(--warning)') + ';font-weight:600;">' +
         (r.payment_status === 'paid' ? '✓已付' : '待付') + '</td>' +
         '<td>' + new Date(r.created_at).toLocaleString('zh-CN', { hour12: false }) + '</td>' +
+        '<td><button class="del-btn" onclick="deleteReg(\'' + esc(r.id_number) + '\', \'' + esc(r.name) + '\')">删除</button></td>' +
         '</tr>';
     });
     html += '</tbody></table>';
@@ -878,6 +934,18 @@ function exportCSV() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   toast('导出成功');
+}
+
+// ==================== 删除报名 ====================
+async function deleteReg(idNumber, name) {
+  if (!confirm('确定要删除 ' + name + ' 的报名记录吗？此操作不可撤销。')) return;
+  try {
+    await restFetch('/registrations?id_number=eq.' + encodeURIComponent(idNumber), 'DELETE');
+    toast('已删除 ' + name + ' 的报名记录');
+    loadAdminData();
+  } catch (err) {
+    toast('删除失败：' + (err.message || ''));
+  }
 }
 
 // ==================== 工具函数 ====================
