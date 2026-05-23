@@ -335,6 +335,10 @@ body {
         </select>
         <span class="slot" id="secondary-slot"></span>
       </div>
+      <div class="form-group" id="partner-group" style="display:none;">
+        <label for="f-partner">请输入您的搭档姓名 <span class="req">*</span></label>
+        <input type="text" id="f-partner" maxlength="20" placeholder="请输入搭档真实姓名">
+      </div>
       <div class="error-summary" id="err-sum" style="display:none;"></div>
       <button type="submit" class="cta-btn" id="submit-btn">提交报名</button>
     </form>
@@ -589,6 +593,8 @@ function initRegForm() {
   document.getElementById('age-display').textContent = '';
   document.getElementById('primary-slot').textContent = '';
   document.getElementById('secondary-slot').textContent = '';
+  document.getElementById('f-partner').value = '';
+  document.getElementById('partner-group').style.display = 'none';
   document.getElementById('f-primary').innerHTML = '<option value="">请先选择性别和出生日期</option>';
   document.getElementById('f-secondary').innerHTML = '<option value="">不兼报</option>';
   document.getElementById('submit-btn').disabled = false;
@@ -665,6 +671,10 @@ function updateSecondary() {
     options.map(function(e) { return '<option value="' + e + '">' + e + '</option>'; }).join('');
 }
 
+function isDoublesEvent(eventName) {
+  return eventName && eventName.indexOf('单打') === -1;
+}
+
 async function showSlotInfo() {
   await loadCounts();
   var primary = document.getElementById('f-primary').value;
@@ -673,6 +683,18 @@ async function showSlotInfo() {
     '（剩余名额：' + (MAX_SLOTS - (STATE.eventCounts[primary] || 0)) + '）' : '';
   document.getElementById('secondary-slot').textContent = secondary ?
     '（剩余名额：' + (MAX_SLOTS - (STATE.eventCounts[secondary] || 0)) + '）' : '';
+
+  var needPartner = isDoublesEvent(primary) || isDoublesEvent(secondary);
+  var partnerGroup = document.getElementById('partner-group');
+  var partnerInput = document.getElementById('f-partner');
+  if (needPartner) {
+    partnerGroup.style.display = 'block';
+    partnerInput.required = true;
+  } else {
+    partnerGroup.style.display = 'none';
+    partnerInput.required = false;
+    partnerInput.value = '';
+  }
 }
 
 // ==================== 表单校验 ====================
@@ -729,6 +751,12 @@ function validateForm() {
 
   var secondary = document.getElementById('f-secondary').value;
   if (secondary && secondary === primary) errs.push('兼报项目不能与报名项目相同');
+
+  if (isDoublesEvent(primary) || isDoublesEvent(secondary)) {
+    var partner = document.getElementById('f-partner').value.trim();
+    if (!partner) errs.push('双打项目请填写搭档姓名');
+    if (partner.length > 20) errs.push('搭档姓名不能超过20个字符');
+  }
 
   return errs;
 }
@@ -787,6 +815,7 @@ async function handleSubmit(e) {
       city: document.getElementById('f-city').value,
       primary_event: primary,
       secondary_event: secondary || null,
+      partner_name: (isDoublesEvent(primary) || isDoublesEvent(secondary)) ? document.getElementById('f-partner').value.trim() : null,
       age_group: ageInfo.group
     };
 
@@ -828,6 +857,7 @@ function renderSuccess() {
   html += '<tr><td>所属市州</td><td>' + r.city + '</td></tr>';
   html += '<tr><td>报名项目</td><td>' + r.primary_event + '</td></tr>';
   if (r.secondary_event) html += '<tr><td>兼报项目</td><td>' + r.secondary_event + '</td></tr>';
+  if (r.partner_name) html += '<tr><td>搭档姓名</td><td>' + esc(r.partner_name) + '</td></tr>';
   html += '<tr><td>住宿</td><td>' + (r.needs_accommodation ? '需要' : '不需要') + '</td></tr>';
   html += '</table>';
   document.getElementById('success-summary').innerHTML = html;
@@ -895,13 +925,14 @@ function renderAdmin(filter) {
   else {
     html += '<table class="data-table"><thead><tr>' +
       '<th>姓名</th><th>性别</th><th>年龄组</th><th>电话</th><th>出生日期</th>' +
-      '<th>身份证号</th><th>市州</th><th>主项</th><th>兼项</th><th>住宿</th><th>付款</th><th>报名时间</th>' +
+      '<th>身份证号</th><th>搭档</th><th>市州</th><th>主项</th><th>兼项</th><th>住宿</th><th>付款</th><th>报名时间</th>' +
       '<th>操作</th>' +
       '</tr></thead><tbody>';
     data.forEach(function(r) {
       html += '<tr>' +
         '<td>' + esc(r.name) + '</td><td>' + r.gender + '</td><td>' + r.age_group + '</td>' +
         '<td>' + r.phone + '</td><td>' + r.birth_date + '</td><td>' + r.id_number + '</td>' +
+        '<td>' + (r.partner_name || '-') + '</td>' +
         '<td>' + r.city + '</td><td>' + r.primary_event + '</td>' +
         '<td>' + (r.secondary_event || '-') + '</td><td>' + (r.needs_accommodation ? '是' : '否') + '</td>' +
         '<td style="color:' + (r.payment_status === 'paid' ? 'var(--success)' : 'var(--warning)') + ';font-weight:600;">' +
@@ -918,12 +949,12 @@ function renderAdmin(filter) {
 function exportCSV() {
   var all = STATE.allAdminData;
   if (!all.length) { toast('没有数据可导出'); return; }
-  var headers = ['姓名','性别','年龄组','电话','出生日期','身份证号','市州','主项','兼项','住宿','付款状态','报名时间'];
+  var headers = ['姓名','性别','年龄组','电话','出生日期','身份证号','搭档','市州','主项','兼项','住宿','付款状态','报名时间'];
   var csv = '﻿' + headers.join(',') + '\n';
   all.forEach(function(r) {
     var row = [
       r.name, r.gender, r.age_group, r.phone, r.birth_date, r.id_number,
-      r.city, r.primary_event, r.secondary_event || '', r.needs_accommodation ? '是' : '否',
+      r.partner_name || '', r.city, r.primary_event, r.secondary_event || '', r.needs_accommodation ? '是' : '否',
       r.payment_status === 'paid' ? '已付' : '待付',
       new Date(r.created_at).toLocaleString('zh-CN', { hour12: false })
     ];
