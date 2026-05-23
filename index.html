@@ -45,17 +45,17 @@ body {
 
 .group-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
 .group-card {
-  aspect-ratio: 1; border-radius: var(--radius-lg); padding: 24px 16px;
+  aspect-ratio: 1; border-radius: var(--radius-lg); padding: 16px 10px;
   box-shadow: var(--shadow-lg); cursor: pointer; transition: all 0.2s;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; color: #fff;
+  text-align: center; color: #fff; max-width: 200px; margin: 0 auto; width: 100%;
 }
 .group-card:active { transform: scale(0.97); }
 .group-card.open { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #A855F7 100%); }
 .group-card.senior { background: linear-gradient(135deg, #F97316 0%, #F59E0B 60%, #EF4444 100%); }
-.group-card .gc-icon { font-size: 2.5rem; margin-bottom: 12px; }
-.group-card .gc-name { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.04em; }
-.group-card .gc-desc { font-size: 0.8rem; opacity: 0.85; margin-top: 8px; line-height: 1.5; }
+.group-card .gc-icon { font-size: 2rem; margin-bottom: 8px; }
+.group-card .gc-name { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.04em; }
+.group-card .gc-desc { font-size: 0.72rem; opacity: 0.85; margin-top: 6px; line-height: 1.5; }
 
 .event-cards { display: grid; gap: 10px; margin-bottom: 20px; }
 .event-card {
@@ -193,6 +193,10 @@ body {
   #app { max-width: 768px; padding: 24px; }
   .hero h1 { font-size: 1.6rem; }
   .event-cards { grid-template-columns: repeat(2, 1fr); }
+  .group-card { padding: 24px 16px; max-width: 260px; }
+  .group-card .gc-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .group-card .gc-name { font-size: 1.4rem; }
+  .group-card .gc-desc { font-size: 0.8rem; margin-top: 8px; }
 }
 </style>
 </head>
@@ -902,7 +906,7 @@ function renderAdmin(filter) {
         '<td style="color:' + (r.payment_status === 'paid' ? 'var(--success)' : 'var(--warning)') + ';font-weight:600;">' +
         (r.payment_status === 'paid' ? '✓已付' : '待付') + '</td>' +
         '<td>' + new Date(r.created_at).toLocaleString('zh-CN', { hour12: false }) + '</td>' +
-        '<td><button class="del-btn" onclick="deleteReg(\'' + esc(r.id_number) + '\', \'' + esc(r.name) + '\')">删除</button></td>' +
+        '<td><button class="del-btn" onclick="deleteReg(' + r.id + ', \'' + esc(r.name) + '\')">删除</button></td>' +
         '</tr>';
     });
     html += '</tbody></table>';
@@ -937,10 +941,10 @@ function exportCSV() {
 }
 
 // ==================== 删除报名 ====================
-async function deleteReg(idNumber, name) {
+async function deleteReg(rowId, name) {
   if (!confirm('确定要删除 ' + name + ' 的报名记录吗？此操作不可撤销。')) return;
   try {
-    await restFetch('/registrations?id_number=eq.' + encodeURIComponent(idNumber), 'DELETE');
+    await restFetch('/registrations?id=eq.' + rowId, 'DELETE');
     toast('已删除 ' + name + ' 的报名记录');
     loadAdminData();
   } catch (err) {
