@@ -945,7 +945,7 @@ function exportCSV() {
 async function deleteReg(rowId, name) {
   if (!confirm('确定要删除 ' + name + ' 的报名记录吗？此操作不可撤销。')) return;
   try {
-    await restFetch('/registrations?id=eq.' + rowId, 'DELETE');
+    await restFetch('/registrations?id=eq.' + rowId, 'DELETE', null, { 'Prefer': 'return=representation' });
     toast('已删除 ' + name + ' 的报名记录');
     loadAdminData();
   } catch (err) {
@@ -959,7 +959,7 @@ async function clearAllData() {
   if (!confirm('再次确认：真的要删除全部 ' + count + ' 条报名记录吗？')) return;
   try {
     for (var i = 0; i < STATE.allAdminData.length; i++) {
-      await restFetch('/registrations?id=eq.' + STATE.allAdminData[i].id, 'DELETE');
+      await restFetch('/registrations?id=eq.' + STATE.allAdminData[i].id, 'DELETE', null, { 'Prefer': 'return=representation' });
     }
     toast('已清空全部 ' + count + ' 条报名数据');
     loadAdminData();
