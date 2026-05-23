@@ -954,11 +954,14 @@ async function deleteReg(rowId, name) {
 }
 
 async function clearAllData() {
+  var count = STATE.allAdminData.length;
   if (!confirm('确定要清空所有报名数据吗？此操作不可撤销！')) return;
-  if (!confirm('再次确认：真的要删除全部 ' + STATE.allAdminData.length + ' 条报名记录吗？')) return;
+  if (!confirm('再次确认：真的要删除全部 ' + count + ' 条报名记录吗？')) return;
   try {
-    await restFetch('/registrations?id=gt.0', 'DELETE');
-    toast('已清空所有报名数据');
+    for (var i = 0; i < STATE.allAdminData.length; i++) {
+      await restFetch('/registrations?id=eq.' + STATE.allAdminData[i].id, 'DELETE');
+    }
+    toast('已清空全部 ' + count + ' 条报名数据');
     loadAdminData();
   } catch (err) {
     toast('清空失败：' + (err.message || ''));
