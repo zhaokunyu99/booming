@@ -329,7 +329,7 @@ body {
         <span class="slot" id="primary-slot"></span>
       </div>
       <div class="form-group">
-        <label for="f-secondary">兼报项目（若需兼报其他项目，请在此填写，后续无法重复报名）</label>
+        <label for="f-secondary">兼报项目（若需兼报其他项目，请在此填写，后续无法重复报名，若有多个搭档请填写全部姓名）</label>
         <select id="f-secondary">
           <option value="">不兼报</option>
         </select>
@@ -354,7 +354,7 @@ body {
         <p>付款码图片加载失败</p><p>请联系管理员：13310781131</p>
       </div>
       <p class="payment-note">请使用微信或支付宝扫码支付</p>
-      <p class="payment-note">付款时请备注：姓名+项目</p>
+      <p class="payment-note">付款时请备注报名选手姓名</p>
       <button class="cta-btn" onclick="showPage('page-success')">已完成付款</button>
     </div>
   </section>
@@ -572,6 +572,8 @@ async function loadPlayerList() {
 async function loadEventPlayers(eventName) {
   var container = document.getElementById('evt-list');
   var countEl = document.getElementById('evt-count');
+  countEl.textContent = '加载中...';
+  container.innerHTML = '<div class="empty">加载中...</div>';
   try {
     var res = await restFetch('/registrations?select=name,age_group,city,primary_event,secondary_event&order=created_at.desc', 'GET');
     var filtered = (res.data || []).filter(function(r) {
