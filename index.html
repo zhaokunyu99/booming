@@ -876,6 +876,9 @@ async function handleSubmit(e) {
     console.error('提交错误:', err.message || err);
     var rawMsg = err.message || '';
     var friendlyMsg;
+    // 提取状态码用于诊断
+    var statusMatch = rawMsg.match(/状态码:\s*(\d+)/);
+    var statusCode = statusMatch ? statusMatch[1] : '';
     if (rawMsg.indexOf('23505') !== -1 || rawMsg.indexOf('duplicate') !== -1) {
       friendlyMsg = '该身份证号已报名，请勿重复提交';
     } else if (rawMsg.indexOf('409') !== -1) {
@@ -886,10 +889,15 @@ async function handleSubmit(e) {
       friendlyMsg = '服务器内部错误，请稍后重试或联系管理员（电话：13310781131）';
     } else if (rawMsg.indexOf('Failed to fetch') !== -1 || rawMsg.indexOf('NetworkError') !== -1) {
       friendlyMsg = '网络连接失败，请检查网络后重试';
+    } else if (statusCode) {
+      // 未知HTTP错误，显示状态码和关键信息用于诊断
+      var msgMatch = rawMsg.match(/消息:\s*([^|]+)/);
+      var detail = msgMatch ? msgMatch[1].trim() : rawMsg;
+      friendlyMsg = '提交失败 [' + statusCode + ']：' + detail + ' | 请截图发管理员排查';
     } else {
-      friendlyMsg = '提交失败，请检查网络后重试';
+      friendlyMsg = '提交失败：' + rawMsg + ' | 请截图发管理员排查';
     }
-    toast(friendlyMsg, 6000);
+    toast(friendlyMsg, 15000);
   } finally {
     btn.disabled = false;
     btn.textContent = '提交报名';
