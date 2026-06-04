@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+// Supabase Edge Function: Serve registration website
+Deno.serve(async (_req) => {
+  const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -547,12 +549,12 @@ async function loadCounts() {
 function renderGroupCards() {
   var container = document.getElementById('group-cards');
   container.innerHTML =
-    '<div class="group-card open" onclick="showPage(\'page-group\', \'公开组\')">' +
+    '<div class="group-card open" onclick="showPage(\\'page-group\\', \\'公开组\\')">' +
       '<div class="gc-icon">🏸</div>' +
       '<div class="gc-name">公开组</div>' +
       '<div class="gc-desc">年龄 &lt; 50 岁<br>男子单打 · 男子双打<br>女子单打 · 女子双打</div>' +
     '</div>' +
-    '<div class="group-card senior" onclick="showPage(\'page-group\', \'常青组\')">' +
+    '<div class="group-card senior" onclick="showPage(\\'page-group\\', \\'常青组\\')">' +
       '<div class="gc-icon">🏅</div>' +
       '<div class="gc-name">常青组</div>' +
       '<div class="gc-desc">年龄 ≥ 50 岁<br>男子双打 · 女子双打<br>混合双打</div>' +
@@ -564,7 +566,7 @@ function renderGroupEvents(container, groupName) {
   container.innerHTML = events.map(function(name) {
     var count = STATE.eventCounts[name] || 0;
     var cls = count >= MAX_SLOTS ? 'full' : (count >= 28 ? 'near' : '');
-    return '<div class="event-card" onclick="showPage(\'page-event-players\', \'' + name + '\')">' +
+    return '<div class="event-card" onclick="showPage(\\'page-event-players\\', \\'' + name + '\\')">' +
       '<span class="name">' + name + '</span>' +
       '<span class="count ' + cls + '">已报名 ' + count + '/' + MAX_SLOTS + '</span></div>';
   }).join('');
@@ -759,7 +761,7 @@ function validateForm() {
 
   var phone = document.getElementById('f-phone').value.trim();
   if (!phone) errs.push('请输入电话号码');
-  else if (!/^1[3-9]\d{9}$/.test(phone)) errs.push('请输入正确的11位手机号');
+  else if (!/^1[3-9]\\d{9}$/.test(phone)) errs.push('请输入正确的11位手机号');
 
   var birthStr = document.getElementById('f-birth').value;
   if (!birthStr) errs.push('请选择出生年月日');
@@ -812,7 +814,7 @@ function validateForm() {
 
 function validateID(id) {
   if (id.length !== 18) return false;
-  if (!/^\d{17}[\dXx]$/.test(id)) return false;
+  if (!/^\\d{17}[\\dXx]$/.test(id)) return false;
   var weights = [7,9,10,5,8,4,2,1,6,3,7,9,10,5,8,4,2];
   var checkMap = '10X98765432';
   var sum = 0;
@@ -999,7 +1001,7 @@ function renderAdmin(filter) {
         '<td style="color:' + (r.payment_status === 'paid' ? 'var(--success)' : 'var(--warning)') + ';font-weight:600;">' +
         (r.payment_status === 'paid' ? '✓已付' : '待付') + '</td>' +
         '<td>' + new Date(r.created_at).toLocaleString('zh-CN', { hour12: false }) + '</td>' +
-        '<td><button class="del-btn" onclick="deleteReg(' + r.id + ', \'' + esc(r.name) + '\')">删除</button></td>' +
+        '<td><button class="del-btn" onclick="deleteReg(' + r.id + ', \\'' + esc(r.name) + '\\')">删除</button></td>' +
         '</tr>';
     });
     html += '</tbody></table>';
@@ -1011,7 +1013,7 @@ function exportCSV() {
   var all = STATE.allAdminData;
   if (!all.length) { toast('没有数据可导出'); return; }
   var headers = ['姓名','性别','年龄组','电话','出生日期','身份证号','搭档','市州','主项','兼项','住宿','付款状态','报名时间'];
-  var csv = '﻿' + headers.join(',') + '\n';
+  var csv = '﻿' + headers.join(',') + '\\n';
   all.forEach(function(r) {
     var row = [
       r.name, r.gender, r.age_group, r.phone, r.birth_date, r.id_number,
@@ -1019,7 +1021,7 @@ function exportCSV() {
       r.payment_status === 'paid' ? '已付' : '待付',
       new Date(r.created_at).toLocaleString('zh-CN', { hour12: false })
     ];
-    csv += row.map(function(c) { return '"' + (c + '').replace(/"/g, '""') + '"'; }).join(',') + '\n';
+    csv += row.map(function(c) { return '"' + (c + '').replace(/"/g, '""') + '"'; }).join(',') + '\\n';
   });
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
@@ -1106,3 +1108,8 @@ window.addEventListener('beforeunload', function(e) {
 
 </body>
 </html>
+`;
+  return new Response(html, {
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+});
