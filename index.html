@@ -329,7 +329,7 @@ body {
         <span class="slot" id="primary-slot"></span>
       </div>
       <div class="form-group">
-        <label for="f-secondary">兼报项目（可不填）</label>
+        <label for="f-secondary">兼报项目（若需兼报其他项目，请在此填写，后续无法重复报名）</label>
         <select id="f-secondary">
           <option value="">不兼报</option>
         </select>
@@ -537,8 +537,7 @@ function renderGroupCards() {
     '</div>';
 }
 
-async function loadGroupPage(groupName) {
-  var container = document.getElementById('group-event-cards');
+function renderGroupEvents(container, groupName) {
   var events = GROUP_EVENTS[groupName] || [];
   container.innerHTML = events.map(function(name) {
     var count = STATE.eventCounts[name] || 0;
@@ -547,6 +546,16 @@ async function loadGroupPage(groupName) {
       '<span class="name">' + name + '</span>' +
       '<span class="count ' + cls + '">已报名 ' + count + '/' + MAX_SLOTS + '</span></div>';
   }).join('');
+}
+
+async function loadGroupPage(groupName) {
+  var container = document.getElementById('group-event-cards');
+  if (!container || !GROUP_EVENTS[groupName]) return;
+  renderGroupEvents(container, groupName);
+  try {
+    await loadCounts();
+    renderGroupEvents(container, groupName);
+  } catch (err) {}
 }
 
 // ==================== 选手名单（公开） ====================
