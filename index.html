@@ -539,7 +539,6 @@ function renderGroupCards() {
 
 async function loadGroupPage(groupName) {
   var container = document.getElementById('group-event-cards');
-  await loadCounts();
   var events = GROUP_EVENTS[groupName] || [];
   container.innerHTML = events.map(function(name) {
     var count = STATE.eventCounts[name] || 0;
@@ -593,6 +592,8 @@ function initRegForm() {
   document.getElementById('age-display').textContent = '';
   document.getElementById('primary-slot').textContent = '';
   document.getElementById('secondary-slot').textContent = '';
+  document.querySelector('input[name="acco"][value="no"]').checked = true;
+  document.querySelector('input[name="acco"][value="yes"]').disabled = false;
   document.getElementById('f-partner').value = '';
   document.getElementById('partner-group').style.display = 'none';
   document.getElementById('f-primary').innerHTML = '<option value="">请先选择性别和出生日期</option>';
@@ -619,6 +620,7 @@ function initRegForm() {
     showSlotInfo();
   });
   document.getElementById('f-secondary').addEventListener('change', showSlotInfo);
+  document.getElementById('f-city').addEventListener('change', onCityChange);
   document.getElementById('reg-form').addEventListener('submit', handleSubmit);
 }
 
@@ -669,6 +671,18 @@ function updateSecondary() {
   var options = cfg.secondary.filter(function(e) { return e !== primary; });
   secondaryEl.innerHTML = '<option value="">不兼报</option>' +
     options.map(function(e) { return '<option value="' + e + '">' + e + '</option>'; }).join('');
+}
+
+function onCityChange() {
+  var city = document.getElementById('f-city').value;
+  var yesRadio = document.querySelector('input[name="acco"][value="yes"]');
+  var noRadio = document.querySelector('input[name="acco"][value="no"]');
+  if (city === '遵义市') {
+    yesRadio.disabled = true;
+    noRadio.checked = true;
+  } else {
+    yesRadio.disabled = false;
+  }
 }
 
 function isDoublesEvent(eventName) {
