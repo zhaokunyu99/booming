@@ -575,12 +575,11 @@ async function loadEventPlayers(eventName) {
   countEl.textContent = '加载中...';
   container.innerHTML = '<div class="empty">加载中...</div>';
   try {
-    var res = await restFetch('/registrations?select=name,age_group,city,primary_event,secondary_event&order=created_at.desc', 'GET');
-    var filtered = (res.data || []).filter(function(r) {
-      return r.primary_event === eventName || r.secondary_event === eventName;
-    });
-    countEl.textContent = '共 ' + filtered.length + ' 人报名（上限 ' + MAX_SLOTS + ' 人）';
-    renderPlayerTable(container, filtered);
+    var filter = 'or=(primary_event.eq.' + encodeURIComponent(eventName) + ',secondary_event.eq.' + encodeURIComponent(eventName) + ')';
+    var res = await restFetch('/registrations?select=name,age_group,city&' + filter + '&order=created_at.desc', 'GET');
+    var data = res.data || [];
+    countEl.textContent = '共 ' + data.length + ' 人报名（上限 ' + MAX_SLOTS + ' 人）';
+    renderPlayerTable(container, data);
   } catch (err) {
     container.innerHTML = '<div class="empty">加载失败：' + esc(err.message) + '</div>';
   }
