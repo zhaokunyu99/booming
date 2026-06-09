@@ -43,31 +43,7 @@ body {
 }
 .nav-link:active { background: #EEF2FF; border-color: var(--primary); }
 
-.group-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-.group-card {
-  aspect-ratio: 1; border-radius: var(--radius-lg); padding: 16px 10px;
-  box-shadow: var(--shadow-lg); cursor: pointer; transition: all 0.2s;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; color: #fff; max-width: 200px; margin: 0 auto; width: 100%;
-}
-.group-card:active { transform: scale(0.97); }
-.group-card.open { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #A855F7 100%); }
-.group-card.senior { background: linear-gradient(135deg, #F97316 0%, #F59E0B 60%, #EF4444 100%); }
-.group-card .gc-icon { font-size: 2rem; margin-bottom: 8px; }
-.group-card .gc-name { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.04em; }
-.group-card .gc-desc { font-size: 0.72rem; opacity: 0.85; margin-top: 6px; line-height: 1.5; }
 
-.event-cards { display: grid; gap: 10px; margin-bottom: 20px; }
-.event-card {
-  background: var(--surface); border-radius: var(--radius); padding: 16px;
-  box-shadow: var(--shadow-sm); border-left: 4px solid var(--primary);
-  cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center;
-}
-.event-card:active { box-shadow: var(--shadow); transform: scale(0.99); }
-.event-card .name { font-weight: 600; font-size: 0.95rem; }
-.event-card .count { font-size: 0.85rem; color: var(--text2); font-weight: 500; }
-.event-card .count.full { color: var(--danger); }
-.event-card .count.near { color: var(--warning); }
 
 .del-btn {
   padding: 4px 10px; font-size: 0.75rem; font-weight: 600; color: #fff;
@@ -192,11 +168,6 @@ body {
 @media (min-width: 768px) {
   #app { max-width: 768px; padding: 24px; }
   .hero h1 { font-size: 1.6rem; }
-  .event-cards { grid-template-columns: repeat(2, 1fr); }
-  .group-card { padding: 24px 16px; max-width: 260px; }
-  .group-card .gc-icon { font-size: 2.5rem; margin-bottom: 12px; }
-  .group-card .gc-name { font-size: 1.4rem; }
-  .group-card .gc-desc { font-size: 0.8rem; margin-top: 8px; }
 }
 </style>
 </head>
@@ -219,14 +190,6 @@ body {
       <div class="nav-link" onclick="showPage('page-players')">选手名单</div>
       <div class="nav-link" onclick="showPage('page-notice')">赛事通知</div>
     </div>
-    <div class="group-cards" id="group-cards">
-      <div class="group-card open" onclick="showPage('page-group', '公开组')">
-        <div class="gc-icon">🏸</div><div class="gc-name">公开组</div>
-      </div>
-      <div class="group-card senior" onclick="showPage('page-group', '常青组')">
-        <div class="gc-icon">🏅</div><div class="gc-name">常青组</div>
-      </div>
-    </div>
     <button class="cta-btn" onclick="showPage('page-register')">立即报名</button>
     <div class="admin-foot">
       <a onclick="showPage('page-admin')">管理员入口</a>
@@ -240,25 +203,6 @@ body {
       <h2>选手名单</h2>
     </div>
     <div id="player-list"></div>
-  </section>
-
-  <!-- ===== 项目选手 ===== -->
-  <section id="page-event-players" class="page">
-    <div class="page-header">
-      <button class="back-btn" onclick="showPage('page-home')">← 返回</button>
-      <h2 id="evt-title"></h2>
-    </div>
-    <div class="count-badge" id="evt-count"></div>
-    <div id="evt-list"></div>
-  </section>
-
-  <!-- ===== 组别子页面 ===== -->
-  <section id="page-group" class="page">
-    <div class="page-header">
-      <button class="back-btn" onclick="showPage('page-home')">← 返回</button>
-      <h2 id="group-title"></h2>
-    </div>
-    <div class="event-cards" id="group-event-cards"></div>
   </section>
 
   <!-- ===== 赛事通知 ===== -->
@@ -448,10 +392,6 @@ async function restFetch(path, method, body, extraHeaders, queryParams) {
 const TOURNAMENT_DATE = new Date('2026-06-27');
 const ADMIN_PASSWORD = '27885';
 const ALL_EVENTS = ['男子单打', '男子双打', '女子单打', '女子双打', '公开组男子双打', '公开组女子双打', '常青组男子双打', '常青组女子双打', '混合双打'];
-const GROUP_EVENTS = {
-  '公开组': ['男子单打', '男子双打', '女子单打', '女子双打'],
-  '常青组': ['公开组男子双打', '公开组女子双打', '常青组男子双打', '常青组女子双打', '混合双打']
-};
 const MAX_SLOTS = 32;
 const EVENTS_CONFIG = {
   '男': {
@@ -485,14 +425,6 @@ function showPage(pageId, data) {
   switch (pageId) {
     case 'page-home': loadHome(); break;
     case 'page-players': loadPlayerList(); break;
-    case 'page-group':
-      document.getElementById('group-title').textContent = data || '';
-      loadGroupPage(data || '');
-      break;
-    case 'page-event-players':
-      document.getElementById('evt-title').textContent = data || '';
-      loadEventPlayers(data || '');
-      break;
     case 'page-notice': break;
     case 'page-register':
       STATE.formDirty = false;
@@ -509,7 +441,6 @@ function showPage(pageId, data) {
 // ==================== 主页 ====================
 async function loadHome() {
   await loadCounts();
-  renderGroupCards();
 }
 
 async function loadCounts() {
@@ -525,68 +456,12 @@ async function loadCounts() {
   } catch (err) { console.error('loadCounts:', err.message || err); }
 }
 
-function renderGroupCards() {
-  var container = document.getElementById('group-cards');
-  container.innerHTML =
-    '<div class="group-card open" onclick="showPage(\'page-group\', \'公开组\')">' +
-      '<div class="gc-icon">🏸</div>' +
-      '<div class="gc-name">公开组</div>' +
-      '<div class="gc-desc">年龄 &lt; 50 岁<br>男子单打 · 男子双打<br>女子单打 · 女子双打</div>' +
-    '</div>' +
-    '<div class="group-card senior" onclick="showPage(\'page-group\', \'常青组\')">' +
-      '<div class="gc-icon">🏅</div>' +
-      '<div class="gc-name">常青组</div>' +
-      '<div class="gc-desc">年龄 ≥ 50 岁<br>男子双打 · 女子双打<br>混合双打</div>' +
-    '</div>';
-}
-
-function renderGroupEvents(container, groupName) {
-  var events = GROUP_EVENTS[groupName] || [];
-  container.innerHTML = events.map(function(name) {
-    var count = STATE.eventCounts[name] || 0;
-    var cls = count >= MAX_SLOTS ? 'full' : (count >= 28 ? 'near' : '');
-    return '<div class="event-card" onclick="showPage(\'page-event-players\', \'' + name + '\')">' +
-      '<span class="name">' + name + '</span>' +
-      '<span class="count ' + cls + '">已报名 ' + count + '/' + MAX_SLOTS + '</span></div>';
-  }).join('');
-}
-
-async function loadGroupPage(groupName) {
-  var container = document.getElementById('group-event-cards');
-  if (!container || !GROUP_EVENTS[groupName]) return;
-  await loadCounts();
-  renderGroupEvents(container, groupName);
-}
-
 // ==================== 选手名单（公开） ====================
 async function loadPlayerList() {
   var container = document.getElementById('player-list');
   try {
-    var res = await restFetch('/registrations', 'GET', null, null, { select: 'name,age_group,city', order: 'created_at.desc' });
+    var res = await restFetch('/registrations', 'GET', null, null, { select: 'name,gender,age_group,city,primary_event,secondary_event,partner_name', order: 'created_at.desc' });
     renderPlayerTable(container, res.data || []);
-  } catch (err) {
-    container.innerHTML = '<div class="empty">加载失败：' + esc(err.message) + '</div>';
-  }
-}
-
-async function loadEventPlayers(eventName) {
-  var container = document.getElementById('evt-list');
-  var countEl = document.getElementById('evt-count');
-  countEl.textContent = '加载中...';
-  container.innerHTML = '<div class="empty">加载中...</div>';
-  try {
-    // 拉取全部报名数据，客户端按项目过滤（避免 Supabase or 过滤器兼容问题）
-    var res = await restFetch('/registrations', 'GET', null, null, {
-      select: 'name,age_group,city,primary_event,secondary_event',
-      order: 'created_at.desc'
-    });
-    var all = res.data || [];
-    var data = all.filter(function(r) {
-      return r.primary_event === eventName || r.secondary_event === eventName;
-    });
-    countEl.textContent = '共 ' + data.length + ' 人报名（上限 ' + MAX_SLOTS + ' 人）';
-    if (!data.length) { container.innerHTML = '<div class="empty">暂无选手报名</div>'; return; }
-    renderPlayerTable(container, data);
   } catch (err) {
     container.innerHTML = '<div class="empty">加载失败：' + esc(err.message) + '</div>';
   }
@@ -594,9 +469,9 @@ async function loadEventPlayers(eventName) {
 
 function renderPlayerTable(container, data) {
   if (!data.length) { container.innerHTML = '<div class="empty">暂无选手报名</div>'; return; }
-  var html = '<div class="table-wrap"><table class="data-table"><thead><tr><th>序号</th><th>姓名</th><th>年龄组</th><th>所属市州</th></tr></thead><tbody>';
+  var html = '<div class="table-wrap"><table class="data-table"><thead><tr><th>序号</th><th>姓名</th><th>性别</th><th>年龄组</th><th>所属市州</th><th>主项</th><th>兼项</th><th>搭档</th></tr></thead><tbody>';
   data.forEach(function(p, i) {
-    html += '<tr><td>' + (i + 1) + '</td><td>' + esc(p.name) + '</td><td>' + p.age_group + '</td><td>' + p.city + '</td></tr>';
+    html += '<tr><td>' + (i + 1) + '</td><td>' + esc(p.name) + '</td><td>' + (p.gender || '') + '</td><td>' + p.age_group + '</td><td>' + p.city + '</td><td>' + (p.primary_event || '') + '</td><td>' + (p.secondary_event || '-') + '</td><td>' + (p.partner_name || '-') + '</td></tr>';
   });
   html += '</tbody></table></div>';
   container.innerHTML = html;
