@@ -60,6 +60,10 @@ body {
 .cta-btn:active { transform: scale(0.98); }
 .cta-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.wechat-contact { text-align: center; margin: 20px 0; }
+.wechat-contact p { font-size: 0.85rem; color: var(--text2); margin-bottom: 10px; }
+.wechat-contact img { width: 200px; border-radius: var(--radius-sm); box-shadow: var(--shadow); }
+
 .admin-foot { text-align: center; margin-top: 24px; padding: 16px; }
 .admin-foot a { color: var(--text3); font-size: 0.8rem; text-decoration: none; cursor: pointer; }
 
@@ -191,6 +195,10 @@ body {
       <div class="nav-link" onclick="showPage('page-notice')">赛事通知</div>
     </div>
     <button class="cta-btn" onclick="showPage('page-register')">立即报名</button>
+    <div class="wechat-contact">
+      <p>若系统故障或需修改报名信息，请添加组委会微信进行报名</p>
+      <img src="wechat.jpg" alt="组委会微信">
+    </div>
     <div class="admin-foot">
       <a onclick="showPage('page-admin')">管理员入口</a>
     </div>
@@ -291,6 +299,10 @@ body {
         <input type="text" id="f-partner" maxlength="20" placeholder="请输入搭档真实姓名">
       </div>
       <div class="error-summary" id="err-sum" style="display:none;"></div>
+      <div class="wechat-contact">
+        <p>若系统故障或需修改报名信息，请添加组委会微信进行报名</p>
+        <img src="wechat.jpg" alt="组委会微信">
+      </div>
       <button type="submit" class="cta-btn" id="submit-btn">提交报名</button>
     </form>
   </section>
