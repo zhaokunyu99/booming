@@ -311,7 +311,7 @@ body {
   <section id="page-payment" class="page">
     <div class="payment-container">
       <h2>报名信息已提交！<br>请完成付款</h2>
-      <p style="font-size:1rem;color:var(--accent);font-weight:600;">报名费：¥50/人</p>
+      <p style="font-size:1rem;color:var(--accent);font-weight:600;">报名费：单打50元/人；双打100元/队</p>
       <img class="payment-qr" src="https://wyzoqkfqzwvtxzrbtgsp.supabase.co/storage/v1/object/public/public-site/payment-qr.jpg" alt="付款二维码" onerror="this.style.display='none';document.getElementById('qr-fallback').style.display='block';">
       <div id="qr-fallback" style="display:none;padding:20px;color:var(--text2);">
         <p>付款码图片加载失败</p><p>请联系管理员：13310781131</p>
