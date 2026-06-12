@@ -60,6 +60,10 @@ body {
 .cta-btn:active { transform: scale(0.98); }
 .cta-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.wechat-contact { text-align: center; margin: 20px 0; }
+.wechat-contact p { font-size: 0.85rem; color: var(--text2); margin-bottom: 10px; }
+.wechat-contact img { width: 200px; border-radius: var(--radius-sm); box-shadow: var(--shadow); }
+
 .admin-foot { text-align: center; margin-top: 24px; padding: 16px; }
 .admin-foot a { color: var(--text3); font-size: 0.8rem; text-decoration: none; cursor: pointer; }
 
@@ -191,6 +195,10 @@ body {
       <div class="nav-link" onclick="showPage('page-notice')">赛事通知</div>
     </div>
     <button class="cta-btn" onclick="showPage('page-register')">立即报名</button>
+    <div class="wechat-contact">
+      <p>若系统故障或需修改报名信息，请添加组委会微信进行报名</p>
+      <img src="https://wyzoqkfqzwvtxzrbtgsp.supabase.co/storage/v1/object/public/public-site/wechat.jpg" alt="组委会微信">
+    </div>
     <div class="admin-foot">
       <a onclick="showPage('page-admin')">管理员入口</a>
     </div>
@@ -291,6 +299,10 @@ body {
         <input type="text" id="f-partner" maxlength="20" placeholder="请输入搭档真实姓名">
       </div>
       <div class="error-summary" id="err-sum" style="display:none;"></div>
+      <div class="wechat-contact">
+        <p>若系统故障或需修改报名信息，请添加组委会微信进行报名</p>
+        <img src="https://wyzoqkfqzwvtxzrbtgsp.supabase.co/storage/v1/object/public/public-site/wechat.jpg" alt="组委会微信">
+      </div>
       <button type="submit" class="cta-btn" id="submit-btn">提交报名</button>
     </form>
   </section>
@@ -392,7 +404,10 @@ async function restFetch(path, method, body, extraHeaders, queryParams) {
 const TOURNAMENT_DATE = new Date('2026-06-27');
 const ADMIN_PASSWORD = '27885';
 const ALL_EVENTS = ['男子单打', '男子双打', '女子单打', '女子双打', '公开组男子双打', '公开组女子双打', '常青组男子双打', '常青组女子双打', '混合双打'];
-const MAX_SLOTS = 32;
+// 单打32人上限，双打/混双64人上限
+function getMaxSlots(eventName) {
+  return eventName && eventName.indexOf('单打') !== -1 ? 32 : 64;
+}
 const EVENTS_CONFIG = {
   '男': {
     '公开组': { primary: ['男子单打', '男子双打'], secondary: ['男子单打', '男子双打'] },
@@ -590,9 +605,9 @@ async function showSlotInfo() {
   var primary = document.getElementById('f-primary').value;
   var secondary = document.getElementById('f-secondary').value;
   document.getElementById('primary-slot').textContent = primary ?
-    '（剩余名额：' + (MAX_SLOTS - (STATE.eventCounts[primary] || 0)) + '）' : '';
+    '（剩余名额：' + (getMaxSlots(primary) - (STATE.eventCounts[primary] || 0)) + '）' : '';
   document.getElementById('secondary-slot').textContent = secondary ?
-    '（剩余名额：' + (MAX_SLOTS - (STATE.eventCounts[secondary] || 0)) + '）' : '';
+    '（剩余名额：' + (getMaxSlots(secondary) - (STATE.eventCounts[secondary] || 0)) + '）' : '';
 
   var needPartner = isDoublesEvent(primary) || isDoublesEvent(secondary);
   var partnerGroup = document.getElementById('partner-group');
@@ -711,8 +726,8 @@ async function handleSubmit(e) {
     var primary = document.getElementById('f-primary').value;
     var secondary = document.getElementById('f-secondary').value;
 
-    if ((STATE.eventCounts[primary] || 0) >= MAX_SLOTS) { toast(primary + '已满员，请选择其他项目'); btn.disabled = false; btn.textContent = '提交报名'; return; }
-    if (secondary && (STATE.eventCounts[secondary] || 0) >= MAX_SLOTS) { toast(secondary + '已满员'); btn.disabled = false; btn.textContent = '提交报名'; return; }
+    if ((STATE.eventCounts[primary] || 0) >= getMaxSlots(primary)) { toast(primary + '已满员，请选择其他项目'); btn.disabled = false; btn.textContent = '提交报名'; return; }
+    if (secondary && (STATE.eventCounts[secondary] || 0) >= getMaxSlots(secondary)) { toast(secondary + '已满员'); btn.disabled = false; btn.textContent = '提交报名'; return; }
 
     var ageInfo = calcAge();
     var reg = {
